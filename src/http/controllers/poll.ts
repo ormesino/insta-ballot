@@ -50,3 +50,35 @@ export async function getPoll(app: FastifyInstance) {
     return reply.status(200).send(poll);
   });
 }
+
+export async function deletePoll(app: FastifyInstance) {
+  app.delete("/polls/:id", async (request, reply) => {
+    const getPollParams = z.object({
+      id: z.string(),
+    });
+
+    const { id } = getPollParams.parse(request.params);
+    await prisma.poll.update({
+      where: {
+        id,
+      },
+      data: {
+        options: {
+          deleteMany: {},
+        },
+      },
+    });
+
+    const deletedPoll = await prisma.poll.delete({
+      where: {
+        id,
+      },
+    });
+
+    if (!deletedPoll) {
+      return reply.status(404).send({ error: "Poll not found" });
+    }
+
+    return reply.status(200).send(deletedPoll.id);
+  });
+}
